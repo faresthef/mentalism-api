@@ -1,5 +1,5 @@
-from flask import Flask, request, make_response
-import json
+from flask import Flask, request, jsonify
+
 app = Flask(__name__)
 
 menu = {
@@ -44,59 +44,39 @@ for entree, p1 in menu["entrees"].items():
                     "total": total_millimes / 1000
                 }
 
-@app.route('/mentalism')
+@app.route('/mentalism', methods=['POST'])
 def mentalism():
-    total_str = request.args.get('total', '0').replace(',', '.')
+    # Récupère le texte depuis MysterSmith
+    total_str = request.form.get('text', '0').replace(',', '.')
     
     try:
         total = float(total_str) * 1000  # Conversion en millimes
         if total in combinations:
             choice = combinations[total]
             
-            # Création du HTML à afficher
-            html_response = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        background: #121212;
-                        color: white;
-                        padding: 20px;
-                        text-align: center;
-                    }}
-                    .menu-item {{
-                        margin: 15px 0;
-                        font-size: 1.2em;
-                    }}
-                    .total {{
-                        font-weight: bold;
-                        font-size: 1.5em;
-                        margin-top: 30px;
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>🔮 Révélation Mentaliste</h1>
-                
-                <div class="menu-item"> Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)</div>
-                <div class="menu-item"> Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)</div>
-                <div class="menu-item"> Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)</div>
-                <div class="menu-item"> Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)</div>
-                
-                <div class="total">TOTAL = {choice['total']:.3f} TND</div>
-            </body>
-            </html>
-            """
-            
-            # Retourne directement le HTML
-            return html_response
+            # Formatage spécial pour MysterSmith
+            return jsonify({
+                "status": "success",
+                "display": f"""
+                🥗 Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)
+                🍲 Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)
+                🍰 Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+                💨 Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+                ──────────────
+                TOTAL = {choice['total']:.3f} TND
+                """,
+                "quick_replies": ["72.700", "58.300", "89.100"]  # Suggestions optionnelles
+            })
         else:
-            return "Aucune combinaison trouvée pour ce total."
+            return jsonify({
+                "status": "error",
+                "display": "Aucune combinaison trouvée. Vérifiez le total."
+            })
     except:
-        return "Erreur : format invalide (utilisez un nombre comme 72.700)"
+        return jsonify({
+            "status": "error", 
+            "display": "Format invalide. Exemple: 72.700"
+        })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
