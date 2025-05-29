@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, make_response
+import json
 
 app = Flask(__name__)
 
@@ -43,42 +44,36 @@ for entree, p1 in menu["entrees"].items():
                     "prix_chicha": p4 / 1000,
                     "total": total_millimes / 1000
                 }
-@app.route('/mentalism', methods=['POST'])
+@app.route('/mentalism', methods=['GET', 'POST'])  # Accepter GET et POST
 def mentalism():
-    # Reçoit le texte depuis MysterSmith
-    total_str = request.form.get('text', '').replace(',', '.').strip()
+    # Récupère le paramètre selon la méthode
+    if request.method == 'POST':
+        total_str = request.form.get('total', '0').replace(',', '.')
+    else:  # GET
+        total_str = request.args.get('total', '0').replace(',', '.')
     
     try:
-        total = float(total_str) * 1000  # Conversion en millimes
+        total = int(float(total_str) * 1000)  # Conversion précise
+        
+        # Debug (à vérifier dans les logs Render)
+        print(f"Recherche pour : {total_str} TND ({total} millimes)")
+        print("Clés existantes :", list(combinations.keys())[:5], "...")
         
         if total in combinations:
             choice = combinations[total]
-            
-            # Formatage pour le remplacement direct
-            return jsonify({
-                "action": "replace",
-                "content": f"""
-                🔍 Votre sélection :
-                
-                • Entrée : {choice['entree']}
-                • Plat : {choice['plat']}
-                • Dessert : {choice['dessert']}
-                • Chicha : {choice['chicha']}
-                
-                💰 Total : {total_str} TND
-                """,
-                "delay": 1  # Délai avant remplacement (secondes)
-            })
+            return f"""
+            🔮 Combinaison Trouvée 🔮
+            Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)
+            Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)
+            Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+            Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+            -------------------------
+            TOTAL = {choice['total']:.3f} TND
+            """
         else:
-            return jsonify({
-                "action": "error",
-                "content": "Aucune combinaison trouvée. Vérifiez le total."
-            })
+            return f"Aucune combinaison pour {total_str} TND (total calculé: {total} millimes)"
             
     except Exception as e:
-        return jsonify({
-            "action": "error",
-            "content": f"Erreur : entrez un nombre valide (ex: 72.700)"
-        })
+        return f"Erreur : {str(e)}"
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
