@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, make_response
 
 app = Flask(__name__)
 
@@ -46,41 +46,32 @@ for entree, p1 in menu["entrees"].items():
 
 @app.route('/mentalism', methods=['POST'])
 def mentalism():
-    # Version optimisée pour MysterSmith
+    total_str = request.form.get('text', '0').replace(',', '.')
+    
     try:
-        total = float(request.form.get('text', '0').replace(',', '.')) * 1000
-        
+        total = float(total_str) * 1000
         if total in combinations:
             choice = combinations[total]
-            return jsonify({
-                "myster_smith_display": f"""  # Clé spéciale requise
-                🔮 RÉVÉLATION 🔮
-                
-                Entrée : {choice['entree']} ({choice['prix_entree']:.3f} TND)
-                Plat : {choice['plat']} ({choice['prix_plat']:.3f} TND)
-                Dessert : {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-                Chicha : {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-                
-                TOTAL = {choice['total']:.3f} TND
-                """,
-                "myster_smith_actions": [  # Options optionnelles
-                    {"type": "reply", "text": "Recommencer"}
-                ]
-            })
-        else:
-            return jsonify({
-                "myster_smith_display": "❌ Aucune combinaison trouvée",
-                "myster_smith_actions": [
-                    {"type": "reply", "text": "Essayer un autre total"}
-                ]
-            })
             
-    except Exception as e:
-        return jsonify({
-            "myster_smith_display": f"⚠️ Erreur : {str(e)}",
-            "myster_smith_actions": [
-                {"type": "reply", "text": "Réessayer"}
-            ]
-        })
+            # Formatage texte brut pour MysterSmith
+            response_text = f"""
+            🔮 RÉVÉLATION 🔮
+            -----------------
+            Entrée : {choice['entree']} ({choice['prix_entree']:.3f} TND)
+            Plat : {choice['plat']} ({choice['prix_plat']:.3f} TND)
+            Dessert : {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+            Chicha : {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+            -----------------
+            TOTAL = {choice['total']:.3f} TND
+            """
+            
+            # Retourne du texte brut avec le bon Content-Type
+            response = make_response(response_text)
+            response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+            return response
+            
+        return "Aucune combinaison trouvée pour ce total."
+    except:
+        return "Erreur : format invalide (exemple: 72.700)"
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
