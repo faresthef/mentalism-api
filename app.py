@@ -46,37 +46,41 @@ for entree, p1 in menu["entrees"].items():
 
 @app.route('/mentalism', methods=['POST'])
 def mentalism():
-    # Récupère le texte depuis MysterSmith
-    total_str = request.form.get('text', '0').replace(',', '.')
-    
+    # Version optimisée pour MysterSmith
     try:
-        total = float(total_str) * 1000  # Conversion en millimes
+        total = float(request.form.get('text', '0').replace(',', '.')) * 1000
+        
         if total in combinations:
             choice = combinations[total]
-            
-            # Formatage spécial pour MysterSmith
             return jsonify({
-                "status": "success",
-                "display": f"""
-                🥗 Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)
-                🍲 Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)
-                🍰 Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-                💨 Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-                ──────────────
+                "myster_smith_display": f"""  # Clé spéciale requise
+                🔮 RÉVÉLATION 🔮
+                
+                Entrée : {choice['entree']} ({choice['prix_entree']:.3f} TND)
+                Plat : {choice['plat']} ({choice['prix_plat']:.3f} TND)
+                Dessert : {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+                Chicha : {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+                
                 TOTAL = {choice['total']:.3f} TND
                 """,
-                "quick_replies": ["72.700", "58.300", "89.100"]  # Suggestions optionnelles
+                "myster_smith_actions": [  # Options optionnelles
+                    {"type": "reply", "text": "Recommencer"}
+                ]
             })
         else:
             return jsonify({
-                "status": "error",
-                "display": "Aucune combinaison trouvée. Vérifiez le total."
+                "myster_smith_display": "❌ Aucune combinaison trouvée",
+                "myster_smith_actions": [
+                    {"type": "reply", "text": "Essayer un autre total"}
+                ]
             })
-    except:
+            
+    except Exception as e:
         return jsonify({
-            "status": "error", 
-            "display": "Format invalide. Exemple: 72.700"
+            "myster_smith_display": f"⚠️ Erreur : {str(e)}",
+            "myster_smith_actions": [
+                {"type": "reply", "text": "Réessayer"}
+            ]
         })
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
