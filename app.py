@@ -1,5 +1,5 @@
-from flask import Flask, request
-
+from flask import Flask, request, make_response
+import json
 app = Flask(__name__)
 
 menu = {
@@ -45,27 +45,6 @@ for entree, p1 in menu["entrees"].items():
                 }
 
 @app.route('/mentalism')
-def mentalism_trick():
-    total_str = request.args.get('total', '0').replace(',', '.')
-    
-    try:
-        total_tnd = float(total_str)
-        total_millimes = int(total_tnd * 1000)
-
-        if total_millimes in combinations:
-            choice = combinations[total_millimes]
-            return f"""vous allez choisir :
-{choice['entree']} ({choice['prix_entree']:.3f} TND)
-{choice['plat']} ({choice['prix_plat']:.3f} TND)
-{choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-{choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-et le total sera {choice['total']:.3f} TND.
-""", 200, {'Content-Type': 'text/plain; charset=utf-8'}
-        else:
-            return f"Aucune combinaison trouvée pour {total_str} TND.", 404, {'Content-Type': 'text/plain; charset=utf-8'}
-    except:
-        return "Format invalide. Utilisez un nombre comme 72.700", 400, {'Content-Type': 'text/plain; charset=utf-8'}
-@app.route('/mentalism')
 def mentalism():
     total_str = request.args.get('total', '0').replace(',', '.')
     
@@ -74,21 +53,50 @@ def mentalism():
         if total in combinations:
             choice = combinations[total]
             
-            # Formatage pour l'affichage MysterSmith
-            response = f"""
-            VOUS AVEZ CHOISI :
-            🥗 Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)
-            🍲 Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)
-            🍰 Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-            💨 Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-            --------------------------
-            TOTAL = {choice['total']:.3f} TND
+            # Création du HTML à afficher
+            html_response = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        background: #121212;
+                        color: white;
+                        padding: 20px;
+                        text-align: center;
+                    }}
+                    .menu-item {{
+                        margin: 15px 0;
+                        font-size: 1.2em;
+                    }}
+                    .total {{
+                        font-weight: bold;
+                        font-size: 1.5em;
+                        margin-top: 30px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>🔮 Révélation Mentaliste</h1>
+                
+                <div class="menu-item"> Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)</div>
+                <div class="menu-item"> Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)</div>
+                <div class="menu-item"> Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)</div>
+                <div class="menu-item"> Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)</div>
+                
+                <div class="total">TOTAL = {choice['total']:.3f} TND</div>
+            </body>
+            </html>
             """
-            return response  # Retourne directement le texte
+            
+            # Retourne directement le HTML
+            return html_response
         else:
-            return "Aucune combinaison trouvée. Vérifiez le total."
+            return "Aucune combinaison trouvée pour ce total."
     except:
-        return "Format invalide. Utilisez un nombre (ex: 72.700)"
+        return "Erreur : format invalide (utilisez un nombre comme 72.700)"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
