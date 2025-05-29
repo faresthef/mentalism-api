@@ -2,7 +2,6 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Menu avec les prix en MILLIMES (1 TND = 1000 millimes)
 menu = {
     "entrees": {
         "Salade": 13400,
@@ -26,10 +25,8 @@ menu = {
     }
 }
 
-# Dictionnaire pour stocker les combinaisons
 combinations = {}
 
-# Générer toutes les combinaisons possibles
 for entree, p1 in menu["entrees"].items():
     for plat, p2 in menu["plats"].items():
         for dessert, p3 in menu["desserts"].items():
@@ -49,32 +46,25 @@ for entree, p1 in menu["entrees"].items():
 
 @app.route('/mentalism')
 def mentalism_trick():
-    # Récupérer le total depuis l'URL
     total_str = request.args.get('total', '0').replace(',', '.')
     
     try:
-        # Convertir en millimes
         total_tnd = float(total_str)
-        total_millimes = int(total_tnd * 1000)  # Conversion en millimes
-        
+        total_millimes = int(total_tnd * 1000)
+
         if total_millimes in combinations:
             choice = combinations[total_millimes]
-            return f"""
-            <h1>Révélation Mentaliste 🔮</h1>
-            <p>VOUS AVEZ CHOISIS :</p>
-            <ul>
-                <li>🥗 Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)</li>
-                <li>🍲 Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)</li>
-                <li>🍰 Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)</li>
-                <li>💨 Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)</li>
-            </ul>
-            <p>--------------------------</p>
-            <h3>TOTAL = {choice['total']:.3f} TND</h3>
-            """
+            return f"""vous allez choisir :
+{choice['entree']} ({choice['prix_entree']:.3f} TND)
+{choice['plat']} ({choice['prix_plat']:.3f} TND)
+{choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+{choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+et le total sera {choice['total']:.3f} TND.
+""", 200, {'Content-Type': 'text/plain; charset=utf-8'}
         else:
-            return f"Aucune combinaison trouvée pour {total_str} TND. Vérifiez la somme.", 404
+            return f"Aucune combinaison trouvée pour {total_str} TND.", 404, {'Content-Type': 'text/plain; charset=utf-8'}
     except:
-        return "Format invalide. Utilisez un nombre (ex: 72.700)", 400
+        return "Format invalide. Utilisez un nombre comme 72.700", 400, {'Content-Type': 'text/plain; charset=utf-8'}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
