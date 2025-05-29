@@ -65,28 +65,30 @@ et le total sera {choice['total']:.3f} TND.
             return f"Aucune combinaison trouvée pour {total_str} TND.", 404, {'Content-Type': 'text/plain; charset=utf-8'}
     except:
         return "Format invalide. Utilisez un nombre comme 72.700", 400, {'Content-Type': 'text/plain; charset=utf-8'}
-
-# ✅ Nouveau endpoint POST compatible Mystersmith
-@app.route('/mentalism', methods=['POST'])
-def mentalism_trick_post():
+@app.route('/mentalism')
+def mentalism():
+    total_str = request.args.get('total', '0').replace(',', '.')
+    
     try:
-        total_str = request.data.decode('utf-8').strip().replace(',', '.')
-        total_tnd = float(total_str)
-        total_millimes = int(total_tnd * 1000)
-
-        if total_millimes in combinations:
-            choice = combinations[total_millimes]
-            return f"""vous allez choisir :
-{choice['entree']} ({choice['prix_entree']:.3f} TND)
-{choice['plat']} ({choice['prix_plat']:.3f} TND)
-{choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-{choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-et le total sera {choice['total']:.3f} TND.
-""", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+        total = float(total_str) * 1000  # Conversion en millimes
+        if total in combinations:
+            choice = combinations[total]
+            
+            # Formatage pour l'affichage MysterSmith
+            response = f"""
+            VOUS AVEZ CHOISI :
+            🥗 Entrée: {choice['entree']} ({choice['prix_entree']:.3f} TND)
+            🍲 Plat: {choice['plat']} ({choice['prix_plat']:.3f} TND)
+            🍰 Dessert: {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
+            💨 Chicha: {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
+            --------------------------
+            TOTAL = {choice['total']:.3f} TND
+            """
+            return response  # Retourne directement le texte
         else:
-            return f"Aucune combinaison trouvée pour {total_str} TND.", 404, {'Content-Type': 'text/plain; charset=utf-8'}
+            return "Aucune combinaison trouvée. Vérifiez le total."
     except:
-        return "Format invalide. Envoyez un nombre comme 72.700", 400, {'Content-Type': 'text/plain; charset=utf-8'}
+        return "Format invalide. Utilisez un nombre (ex: 72.700)"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
