@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -43,35 +43,42 @@ for entree, p1 in menu["entrees"].items():
                     "prix_chicha": p4 / 1000,
                     "total": total_millimes / 1000
                 }
-
 @app.route('/mentalism', methods=['POST'])
 def mentalism():
-    total_str = request.form.get('text', '0').replace(',', '.')
+    # Reçoit le texte depuis MysterSmith
+    total_str = request.form.get('text', '').replace(',', '.').strip()
     
     try:
-        total = float(total_str) * 1000
+        total = float(total_str) * 1000  # Conversion en millimes
+        
         if total in combinations:
             choice = combinations[total]
             
-            # Formatage texte brut pour MysterSmith
-            response_text = f"""
-            🔮 RÉVÉLATION 🔮
-            -----------------
-            Entrée : {choice['entree']} ({choice['prix_entree']:.3f} TND)
-            Plat : {choice['plat']} ({choice['prix_plat']:.3f} TND)
-            Dessert : {choice['dessert']} ({choice['prix_dessert']:.3f} TND)
-            Chicha : {choice['chicha']} ({choice['prix_chicha']:.3f} TND)
-            -----------------
-            TOTAL = {choice['total']:.3f} TND
-            """
+            # Formatage pour le remplacement direct
+            return jsonify({
+                "action": "replace",
+                "content": f"""
+                🔍 Votre sélection :
+                
+                • Entrée : {choice['entree']}
+                • Plat : {choice['plat']}
+                • Dessert : {choice['dessert']}
+                • Chicha : {choice['chicha']}
+                
+                💰 Total : {total_str} TND
+                """,
+                "delay": 1  # Délai avant remplacement (secondes)
+            })
+        else:
+            return jsonify({
+                "action": "error",
+                "content": "Aucune combinaison trouvée. Vérifiez le total."
+            })
             
-            # Retourne du texte brut avec le bon Content-Type
-            response = make_response(response_text)
-            response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-            return response
-            
-        return "Aucune combinaison trouvée pour ce total."
-    except:
-        return "Erreur : format invalide (exemple: 72.700)"
+    except Exception as e:
+        return jsonify({
+            "action": "error",
+            "content": f"Erreur : entrez un nombre valide (ex: 72.700)"
+        })
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
