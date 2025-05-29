@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
@@ -43,42 +43,95 @@ for entree, p1 in menu["entrees"].items():
                     "prix_chicha": p4 / 1000,
                     "total": total_millimes / 1000
                 }
-@app.route('/mentalism', methods=['GET', 'POST'])
+@app.route('/mentalism')
 def mentalism():
-    # Récupération du total
-    total_str = request.form.get('total', request.args.get('total', '0')).replace(',', '.').strip()
+    total_str = request.args.get('total', '0').replace(',', '.').strip()
     
     try:
-        total = int(float(total_str) * 1000)  # Conversion précise en millimes
-        
+        total = int(float(total_str) * 1000)
         if total in combinations:
             choice = combinations[total]
             
-            # Format reçu minimaliste
-            receipt = f"""
-            Révélation Mentaliste
-            ---------------------
-            Vous avez choisi :
-            {choice['entree']} - Prix : {choice['prix_entree']:.3f} DTN
-            {choice['plat']} - Prix : {choice['prix_plat']:.3f} DTN
-            {choice['dessert']} - Prix : {choice['prix_dessert']:.3f} DTN
-            {choice['chicha']} - Prix : {choice['prix_chicha']:.3f} DTN
-            ---------------------
-            TOTAL = {choice['total']:.3f} DTN
+            # Template HTML minimaliste pour navigateur
+            receipt_html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Révélation Mentaliste</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body {
+                        font-family: 'Courier New', monospace;
+                        max-width: 500px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        color: #333;
+                    }
+                    h1 {
+                        text-align: center;
+                        font-size: 1.5em;
+                        border-bottom: 2px dashed #333;
+                        padding-bottom: 10px;
+                    }
+                    .item {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 8px 0;
+                    }
+                    .total {
+                        font-weight: bold;
+                        border-top: 2px dashed #333;
+                        margin-top: 15px;
+                        padding-top: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>RÉVÉLATION MENTALISTE</h1>
+                
+                <div class="item">
+                    <span>Entrée :</span>
+                    <span>{{ entree }} - {{ prix_entree }} DTN</span>
+                </div>
+                
+                <div class="item">
+                    <span>Plat :</span>
+                    <span>{{ plat }} - {{ prix_plat }} DTN</span>
+                </div>
+                
+                <div class="item">
+                    <span>Dessert :</span>
+                    <span>{{ dessert }} - {{ prix_dessert }} DTN</span>
+                </div>
+                
+                <div class="item">
+                    <span>Chicha :</span>
+                    <span>{{ chicha }} - {{ prix_chicha }} DTN</span>
+                </div>
+                
+                <div class="total">
+                    <span>TOTAL :</span>
+                    <span>{{ total }} DTN</span>
+                </div>
+            </body>
+            </html>
             """
             
-            return jsonify({
-                "myster_smith_display": receipt,
-                "myster_smith_format": "fixed_width"  # Pour une police monospace
-            })
+            return render_template_string(receipt_html,
+                entree=choice['entree'],
+                plat=choice['plat'],
+                dessert=choice['dessert'],
+                chicha=choice['chicha'],
+                prix_entree=f"{choice['prix_entree']:.3f}",
+                prix_plat=f"{choice['prix_plat']:.3f}",
+                prix_dessert=f"{choice['prix_dessert']:.3f}",
+                prix_chicha=f"{choice['prix_chicha']:.3f}",
+                total=f"{choice['total']:.3f}"
+            )
             
-        return jsonify({
-            "myster_smith_display": f"Aucune combinaison pour {total_str} DTN"
-        })
+        return "Aucune combinaison trouvée pour " + total_str + " DTN"
         
     except Exception as e:
-        return jsonify({
-            "myster_smith_display": f"Erreur : Entrez un nombre valide (ex: 72.700)"
-        })
+        return f"Erreur : {str(e)}"
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
